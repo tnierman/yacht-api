@@ -11,11 +11,12 @@ type Logger struct {
 }
 
 // NewLogger creates a Logger
-func NewLogger() (*Logger, error) {
+func NewLogger(name string) (*Logger, error) {
 	// Configure
 	cfg := zap.NewProductionConfig()
 	cfg.EncoderConfig.TimeKey = "timestamp"
 	cfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	cfg.EncoderConfig.NameKey = name
 
 	// Build & return
 	zapLogger, err := cfg.Build()
@@ -28,4 +29,11 @@ func NewLogger() (*Logger, error) {
 // Cleanup flushes the logger's buffer before the program terminates
 func (l *Logger) Cleanup() {
 	l.Logger.Sync()
+}
+
+func (l *Logger) NewChildLogger(name string) *Logger {
+	child := l.Logger.Named(name)
+	return &Logger {
+		Logger: child,
+	}
 }
