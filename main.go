@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/tnierman/yacht-api/pkg/api"
+	"github.com/tnierman/yacht-api/pkg/apiserver"
 	"github.com/tnierman/yacht-api/pkg/logging"
 )
 
@@ -14,7 +14,7 @@ func main() {
 	}
 	defer logger.Cleanup()
 
-	server := api.NewServer()
+	server := apiserver.NewServer()
 	err = server.Serve(logger)
 	if err != nil {
 		

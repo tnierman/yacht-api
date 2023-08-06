@@ -1,12 +1,12 @@
-package api
+package apiserver
 
 import (
 	"net/http"
 	"time"
 
 	"github.com/tnierman/yacht-api/pkg/logging"
-	"github.com/tnierman/yacht-api/pkg/providers/jira"
-	"github.com/tnierman/yacht-api/pkg/providers/pagerduty"
+	"github.com/tnierman/yacht-api/pkg/services/jira"
+	"github.com/tnierman/yacht-api/pkg/services/pagerduty"
 
 	"github.com/gorilla/mux"
 )
