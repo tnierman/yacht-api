@@ -98,10 +98,7 @@ func (c *Collector) collectIncidentsFromOffset(offset int) error {
 		return fmt.Errorf("failed to retrieve incidents from pagerduty: %w", err)
 	}
 
-	fmt.Println("response incidents:", response.Incidents)
 	c.incidents = append(c.incidents, response.Incidents...)
-	fmt.Println("len of incidents collected: ", len(c.incidents))
-	fmt.Println("total incidents expected: ", response.Total)
 	if response.More {
 		return c.collectIncidentsFromOffset(len(c.incidents))
 	}
@@ -109,13 +106,10 @@ func (c *Collector) collectIncidentsFromOffset(offset int) error {
 }
 
 func (c *Collector) Incidents() []pagerduty.Incident {
-	fmt.Println("waiting before retrieving")
 	c.incidentCollection.Wait()
-	fmt.Println("gathering incidents")
 	c.incidentCollection.Add(1)
 	incidents := c.incidents
 	c.incidentCollection.Done()
-	fmt.Println("gathered incidents")
 	return incidents
 }
 
