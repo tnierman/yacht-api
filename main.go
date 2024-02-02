@@ -1,44 +1,52 @@
 package main
 
 import (
-	"fmt"
+	"encoding/json"
 	"log"
-	"os"
+	"net/http"
 
-	"github.com/tnierman/yacht-api/pkg/apiserver"
-	"github.com/tnierman/yacht-api/pkg/logging"
-	"github.com/tnierman/yacht-api/pkg/services/pagerduty"
+	gopagerduty "github.com/PagerDuty/go-pagerduty"
+	"github.com/gorilla/mux"
+	"github.com/tnierman/yacht-api/pkg/pagerduty"
 )
 
 func main() {
-	logger, err := logging.NewLogger("main")
-	if err != nil {
-		log.Fatalf("failed to create logger: %v", err)
-	}
-	defer logger.Cleanup()
+	r := mux.NewRouter()
+	r.HandleFunc("/api/clusters/{id}", clusterHandler)
 
-	pdAuthToken, err := getPDAuthToken()
-	if err != nil {
-		logger.Sugar().Fatalf("failed to retrieve token from ~/.pd.yml: %v", err)
+	server := &http.Server {
+		Handler: r,
+		Addr: "127.0.0.1:8000",
 	}
-
-	opts := apiserver.ServerOptions{
-		Pagerduty: pagerduty.ServiceOptions{
-			AuthToken: pdAuthToken,
-			Teams: []string{"Platform SRE"},
-		},
-	}
-	server := apiserver.NewServer(logger, opts)
-	err = server.Serve(logger)
-	if err != nil {
-		logger.Sugar().Fatalf("failed to run apiserver: %v", err)
-	}
+	log.Fatal(server.ListenAndServe())
 }
 
-func getPDAuthToken() (string, error) {
-	pdToken, found := os.LookupEnv("PD_TOKEN")
-	if !found || pdToken == "" {
-		return "", fmt.Errorf("$PD_TOKEN unset")
+// ClusterResponse defines the response body for a request at /api/clusters/{id}
+type ClusterResponse struct {
+	ClusterID string								 `json:"ID,omitempty"`
+	Incidents []gopagerduty.Incident `json:"incidents,omitempty"`
+}
+
+func clusterHandler(resp http.ResponseWriter, req *http.Request) {
+	body := ClusterResponse{}
+
+	vars := mux.Vars(req)
+	clusterID, found := vars["id"]
+	if !found {
+		// TODO - log and return error in resp
+		log.Fatalf("failed to determine cluster ID from request: %#v", req)
 	}
-	return pdToken, nil
+	body.ClusterID = clusterID
+
+	incidents, err := pagerduty.GetClusterIncidents(clusterID)
+	if err != nil {
+		log.Fatalf("failed to retrieve incidents from PagerDuty: %v", err)
+	}
+	body.Incidents = incidents
+
+	bytes, err := json.Marshal(body)
+	if err != nil {
+		log.Fatalf("failed to encode response body: %v", err)
+	}
+	resp.Write(bytes)
 }
