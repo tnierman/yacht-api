@@ -2,21 +2,19 @@ package main
 
 import (
 	"log"
+	"net/http"
 
-	"github.com/tnierman/yacht-api/pkg/apiserver"
-	"github.com/tnierman/yacht-api/pkg/logging"
+	"github.com/gorilla/mux"
+	"github.com/tnierman/yacht-api/pkg/handlers/cluster"
 )
 
 func main() {
-	logger, err := logging.NewLogger()
-	if err != nil {
-		log.Fatalf("failed to create logger: %v", err)
-	}
-	defer logger.Cleanup()
+	r := mux.NewRouter()
+	r.HandleFunc("/api/clusters/{id}", cluster.ClusterIDHandler)
 
-	server := apiserver.NewServer()
-	err = server.Serve(logger)
-	if err != nil {
-		
+	server := &http.Server {
+		Handler: r,
+		Addr: "127.0.0.1:8000",
 	}
+	log.Fatal(server.ListenAndServe())
 }
